@@ -2,8 +2,11 @@
 /dist
 /node_modules
 
-# storage
+# local storage
 /public
+
+# local env
+.env
 
 # Logs
 logs
