@@ -30,7 +30,7 @@ class Convolute {
         { name: KernelType.lines, kernel: [[-2, -1, 3], [1, 0, 1], [-3, 1, 2]] }
     ];
 
-    run(name: string = 'pixel-conv', path: string = null, type: KernelType = KernelType.border, rounds: number = 1, floyd: number = 9): Promise<string> {
+    run(name: string = 'pixel-conv', path: string = null, type: KernelType = null, rounds: number = 1, floyd: number = 9): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (!path) {
                 console.log('Null file');
@@ -38,11 +38,18 @@ class Convolute {
             }
             const selected: IKernel = this.kernels.filter(x => x.name === type).pop();
             const outPath = './public/output/';
-            const outName = `${name.split('.')[0]}_${type}.jpg`;
+            const outName = `${name.split('.')[0]}_${type ? type : 'mixed'}.jpg`;
             Jimp.read(path).then(image => {
                 this.floydSteinberg(image, floyd);
-                for (let i = 0; i < this.kernels.length; i++) {
-                    image.convolute(this.kernels[i].kernel);
+                if (!type) {
+                    for (let i = 0; i < this.kernels.length; i++) {
+                        image.convolute(this.kernels[i].kernel);
+                        image.brightness(0.0);
+                    }
+                } else {
+                    for (let i = 0; i < rounds; i++) {
+                        image.convolute(selected.kernel);    
+                    }
                 }
                 image.write(outPath + outName);
                 return resolve(outName)
@@ -54,8 +61,6 @@ class Convolute {
     }
 
     private floydSteinberg(image: Jimp, factor: number) {
-        let redSum, greenSum, blueSum = 0;
-
         image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
             const r = image.bitmap.data[idx + 0];
             const g = image.bitmap.data[idx + 1];

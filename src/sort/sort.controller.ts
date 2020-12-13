@@ -44,7 +44,8 @@ export class SortController {
         const reqFile = file as RequestFile;
         const response = {
             originalname: reqFile.originalname,
-            filename: reqFile.filename
+            filename: reqFile.filename,
+            url: `http://localhost:3000/sort/process/${reqFile.filename}`
         };
         return response;
     }
@@ -57,7 +58,8 @@ export class SortController {
         const conf = await convolute.run(name, path, kernel, rounds, floyd);
         const response = {
             originalfile: image,
-            manipulatedfile: conf
+            manipulatedfile: conf,
+            url: `http://localhost:3000/sort/download/${conf}`
         };
         return response;
     }
