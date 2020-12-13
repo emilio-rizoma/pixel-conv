@@ -48,12 +48,13 @@ export class SortController {
   )
   async uploadedFile(@UploadedFile() file, @Req() req) {
     const reqFile = file as RequestFile;
+    const ssl = process.env.SSL;
     const baseurl = req.headers.host;
     const domain = process.env.DOMAIN;
     const response = {
       originalname: reqFile.originalname,
       filename: reqFile.filename,
-      url: `https://{{${baseurl}}}/${domain}/sort/process/${reqFile.filename}`,
+      url: `${ssl}://{{${baseurl}}}${domain}/sort/process/${reqFile.filename}`,
     };
     return response;
   }
@@ -64,12 +65,13 @@ export class SortController {
     const name = image.replace('.jpeg', '');
     const path = `./public/img/${image}`;
     const conf = await convolute.run(name, path, kernel, rounds, floyd);
+    const ssl = process.env.SSL;
     const baseurl = req.headers.host;
     const domain = process.env.DOMAIN;
     const response = {
       originalfile: image,
       manipulatedfile: conf,
-      url: `https://${baseurl}/${domain}/sort/download/${conf}`,
+      url: `${ssl}://${baseurl}${domain}/sort/download/${conf}`,
     };
     return response;
   }

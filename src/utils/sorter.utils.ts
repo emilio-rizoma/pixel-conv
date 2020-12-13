@@ -14,6 +14,7 @@ interface IColor {
 export enum KernelType {
   border = 'border',
   focus = 'focus',
+  gauss = 'gauss',
   sharp = 'sharp',
   cubism = 'cubism',
   finger = 'finger',
@@ -56,6 +57,8 @@ class Convolute {
       ],
     },
   ];
+  focus: IKernel = { name: KernelType.focus, kernel: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
+  gauss: IKernel = { name: KernelType.gauss, kernel: [[1, 2, 1], [2, 4, 2], [1, 2, 1]] };
 
   run(
     name = 'pixel-conv',
@@ -76,17 +79,25 @@ class Convolute {
       const outName = `${name.split('.')[0]}_${type ? type : 'mixed'}.jpg`;
       Jimp.read(path)
         .then((image) => {
+          const roll = image.clone();
           this.floydSteinberg(image, floyd);
           if (!type) {
-            for (let i = 0; i < this.kernels.length; i++) {
-              image.convolute(this.kernels[i].kernel);
-              image.brightness(0.0);
+            for (let i = 0; i < rounds; i++) {
+              for (let i = 0; i < this.kernels.length; i++) {
+                image.convolute(this.kernels[i].kernel);
+              }
             }
           } else {
             for (let i = 0; i < rounds; i++) {
               image.convolute(selected.kernel);
             }
           }
+          image.convolute(this.focus.kernel);
+          image.composite(roll, 0, 0, {
+            mode: Jimp.BLEND_SOURCE_OVER,
+            opacitySource: 0.65,
+            opacityDest: 0.85,
+          });
           image.write(outPath + outName);
           return resolve(outName);
         })
@@ -97,19 +108,30 @@ class Convolute {
     });
   }
 
-  private floydSteinberg(image: Jimp, factor: number) {
+  private async floydSteinberg(image: Jimp, factor: number) {
+    // let temp = image.clone();
+    // temp.convolute(this.focus.kernel);
     image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
       const r = image.bitmap.data[idx + 0];
       const g = image.bitmap.data[idx + 1];
       const b = image.bitmap.data[idx + 2];
       const a = image.bitmap.data[idx + 3];
       const oldColor = { r, g, b };
+
+      // const rT = temp.bitmap.data[idx + 0];
+      // const gT = temp.bitmap.data[idx + 1];
+      // const bT = temp.bitmap.data[idx + 2];
+      // const aT = temp.bitmap.data[idx + 3];
+      // const tColor = { r: rT, g: gT, b: bT };
+
       const newColor = this.quantizeColor(oldColor, factor);
       const quant = this.quantizeError(oldColor, newColor);
       image.setPixelColor(Jimp.rgbaToInt(quant.r, quant.g, quant.b, a), x, y);
+
       // if (x == image.bitmap.width - 1 && y == image.bitmap.height - 1) {
       // }
     });
+
   }
 
   private quantizeColor(color: IColor, factor: number): IColor {
