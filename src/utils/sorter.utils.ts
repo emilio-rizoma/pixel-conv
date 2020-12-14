@@ -6,9 +6,7 @@ interface IKernel {
 }
 
 interface IColor {
-  r;
-  g;
-  b: number;
+  r, g, b: number;
 }
 
 export enum KernelType {
