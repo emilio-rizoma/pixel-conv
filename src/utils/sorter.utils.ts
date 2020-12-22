@@ -18,6 +18,7 @@ export enum KernelType {
   finger = 'finger',
   waves = 'waves',
   lines = 'lines',
+  nega = 'nega'
 }
 
 class Convolute {
@@ -54,7 +55,16 @@ class Convolute {
         [-3, 1, 2],
       ],
     },
+    {
+      name: KernelType.nega,
+      kernel: [
+        [0, 1, 0],
+        [1, 4, 1],
+        [0, 1, 0]
+      ],
+    }
   ];
+  nega: IKernel = { name: KernelType.nega, kernel: [[0, 1, 0], [1, 4, 1], [0, 1, 0]] };
   focus: IKernel = { name: KernelType.focus, kernel: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
   gauss: IKernel = { name: KernelType.gauss, kernel: [[1, 2, 1], [2, 4, 2], [1, 2, 1]] };
 
@@ -78,24 +88,30 @@ class Convolute {
       Jimp.read(path)
         .then((image) => {
           const roll = image.clone();
-          this.floydSteinberg(image, floyd);
+          roll.resize(Jimp.AUTO, 1440);
+          // this.floydSteinberg(image, floyd);
+          this.plasmaSorter(image);
           if (!type) {
             for (let i = 0; i < rounds; i++) {
               for (let i = 0; i < this.kernels.length; i++) {
-                image.convolute(this.kernels[i].kernel);
+                image.convolution(this.kernels[i].kernel);
+                image.resize(Jimp.AUTO, 1440);
               }
             }
           } else {
             for (let i = 0; i < rounds; i++) {
-              image.convolute(selected.kernel);
+              image.convolution(selected.kernel)
+              image.resize(Jimp.AUTO, 1440);
             }
           }
           image.convolute(this.focus.kernel);
+          
           image.composite(roll, 0, 0, {
             mode: Jimp.BLEND_SOURCE_OVER,
             opacitySource: 0.65,
-            opacityDest: 0.85,
+            opacityDest: 0.95,
           });
+          // image.resize(Jimp.AUTO, 1080);
           image.write(outPath + outName);
           return resolve(outName);
         })
@@ -106,22 +122,59 @@ class Convolute {
     });
   }
 
+  private async plasmaSorter(image: Jimp) {
+    let val = 1;
+    image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
+      let newColor = 0;
+      const raw = image.bitmap;
+      const a = raw.data[idx + 3];
+      switch (val) {
+        case 1:
+        case 4:
+          val++;
+          const g = raw.data[idx + 1];
+          const gCur = { r: 0, g, b: 0 };
+          newColor = Jimp.rgbaToInt(gCur.r, gCur.g, gCur.b, a);
+          break;
+        case 2:
+          val++;
+          const r = raw.data[idx + 0];
+          const rCur = { r, g: 0, b: 0 };
+          newColor = Jimp.rgbaToInt(rCur.r, rCur.g, rCur.b, a);
+          break;
+        case 3:
+          val++;
+          const b = raw.data[idx + 2];
+          const bCur = { r: 0, g: 0, b };
+          newColor = Jimp.rgbaToInt(bCur.r, bCur.g, bCur.b, a);
+          break;
+        case 5:
+          val = 1;
+          newColor = Jimp.rgbaToInt(0, 0, 0, 1);
+          break;
+        default:
+          val = 1;
+          newColor = Jimp.rgbaToInt(0, 0, 0, 1);
+          break;
+      }
+
+      image.setPixelColor(newColor, x, y);
+
+
+      // if (x == image.bitmap.width - 1 && y == image.bitmap.height - 1) {
+      // }
+    });
+
+  }
+
+
   private async floydSteinberg(image: Jimp, factor: number) {
-    // let temp = image.clone();
-    // temp.convolute(this.focus.kernel);
     image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
       const r = image.bitmap.data[idx + 0];
       const g = image.bitmap.data[idx + 1];
       const b = image.bitmap.data[idx + 2];
       const a = image.bitmap.data[idx + 3];
       const oldColor = { r, g, b };
-
-      // const rT = temp.bitmap.data[idx + 0];
-      // const gT = temp.bitmap.data[idx + 1];
-      // const bT = temp.bitmap.data[idx + 2];
-      // const aT = temp.bitmap.data[idx + 3];
-      // const tColor = { r: rT, g: gT, b: bT };
-
       const newColor = this.quantizeColor(oldColor, factor);
       const quant = this.quantizeError(oldColor, newColor);
       image.setPixelColor(Jimp.rgbaToInt(quant.r, quant.g, quant.b, a), x, y);
