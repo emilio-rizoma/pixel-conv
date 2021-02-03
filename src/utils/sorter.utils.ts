@@ -10,26 +10,25 @@ interface IColor {
 }
 
 export enum KernelType {
-  border = 'border',
-  focus = 'focus',
-  gauss = 'gauss',
-  sharp = 'sharp',
+
+  edgeA = 'edgeA',
+  edgeB = 'edgeB',
   cubism = 'cubism',
   finger = 'finger',
   waves = 'waves',
   lines = 'lines',
-  nega = 'nega'
+  gauss = 'gauss'
 }
 
 class Convolute {
-  kernels: IKernel[] = [
+  artik: IKernel[] = [
     {
       name: KernelType.cubism,
       kernel: [
         [-1, -1, -1],
         [-1, 9, -1],
         [-1, -1, -1],
-      ],
+      ]
     },
     {
       name: KernelType.finger,
@@ -37,7 +36,7 @@ class Convolute {
         [-1, 1, 0],
         [1, 1, 1],
         [0, 1, 0],
-      ],
+      ]
     },
     {
       name: KernelType.waves,
@@ -45,7 +44,7 @@ class Convolute {
         [0, 0, 0],
         [1, -1, 1],
         [0, 0, 0],
-      ],
+      ]
     },
     {
       name: KernelType.lines,
@@ -53,20 +52,46 @@ class Convolute {
         [-2, -1, 3],
         [1, 0, 1],
         [-3, 1, 2],
+      ]
+    },
+    {
+      name: KernelType.gauss,
+      kernel: [
+        [1, 2, 1],
+        [2, 4, 2],
+        [1, 2, 1]
+      ]
+    }
+  ];
+  kernels: IKernel[] = [
+    {
+      name: KernelType.edgeA,
+      kernel: [
+        [1, 0, -1],
+        [0, 0, 0],
+        [-1, 0, 1],
       ],
     },
     {
-      name: KernelType.nega,
+      name: KernelType.edgeB,
       kernel: [
-        [0, 1, 0],
-        [1, 4, 1],
-        [0, 1, 0]
+        [-1, -1, -1],
+        [-1, 8, -1],
+        [-1, -1, -1]
       ],
+    },
+    {
+      name: KernelType.gauss,
+      kernel: [
+        [1, 2, 1],
+        [2, 4, 2],
+        [1, 2, 1]
+      ]
     }
   ];
-  nega: IKernel = { name: KernelType.nega, kernel: [[0, 1, 0], [1, 4, 1], [0, 1, 0]] };
-  focus: IKernel = { name: KernelType.focus, kernel: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
-  gauss: IKernel = { name: KernelType.gauss, kernel: [[1, 2, 1], [2, 4, 2], [1, 2, 1]] };
+  // edge: IKernel = { name: KernelType.edge, kernel: [[0, 1, 0], [1, 4, 1], [0, 1, 0]] };
+  // focus: IKernel = { name: KernelType.focus, kernel: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
+  // gauss: IKernel = { name: KernelType.gauss, kernel: [[1, 2, 1], [2, 4, 2], [1, 2, 1]] };
 
   run(
     name = 'pixel-conv',
@@ -80,38 +105,54 @@ class Convolute {
         console.log('Null file');
         return reject();
       }
-      const selected: IKernel = this.kernels
-        .filter((x) => x.name === type)
-        .pop();
+
       const outPath = './public/output/';
       const outName = `${name.split('.')[0]}_${type ? type : 'mixed'}.jpg`;
       Jimp.read(path)
         .then((image) => {
-          const roll = image.clone();
-          roll.resize(Jimp.AUTO, 1440);
-          // this.floydSteinberg(image, floyd);
-          this.plasmaSorter(image);
-          if (!type) {
-            for (let i = 0; i < rounds; i++) {
-              for (let i = 0; i < this.kernels.length; i++) {
-                image.convolution(this.kernels[i].kernel);
-                image.resize(Jimp.AUTO, 1440);
-              }
-            }
-          } else {
-            for (let i = 0; i < rounds; i++) {
-              image.convolution(selected.kernel)
-              image.resize(Jimp.AUTO, 1440);
-            }
+
+          // Will make a copy for later
+          // const roll = image.clone();
+          // roll.resize(Jimp.AUTO, 1440);
+          image.resize(Jimp.AUTO, 1440);
+          image.color([
+            { apply: 'hue', params: [10] }
+          ]);
+          // this.floydSteinberg(roll,124);
+
+          // this.kernels.forEach(el => {
+          // roll.resize(Jimp.AUTO, 1440);
+          // image.convolution(this.kernels[0].kernel)
+          // });
+          // this.plasmaSorter(image);
+          // Need to focus?
+          this.floydSteinberg(image, floyd);
+          for (let index = 0; index < rounds; index++) {
+            image.convolute(this.artik.filter(x => x.name == type).pop().kernel);
           }
-          image.convolute(this.focus.kernel);
           
-          image.composite(roll, 0, 0, {
-            mode: Jimp.BLEND_SOURCE_OVER,
-            opacitySource: 0.65,
-            opacityDest: 0.95,
-          });
-          // image.resize(Jimp.AUTO, 1080);
+          this.plasmaSorter(image);
+          
+          image.brightness(0.1);
+          // image.convolute(this.artik.filter(x => x.name == KernelType.gauss).pop().kernel);
+          // roll.scan(0, 0, roll.bitmap.width, roll.bitmap.height, (x, y, idx) => {
+          //   const raw = roll.bitmap;
+          //   const r = raw.data[idx + 0];
+          //   const g = raw.data[idx + 1];
+          //   const b = raw.data[idx + 2];
+          //   const a = raw.data[idx + 3];
+          //   const cur = Jimp.rgbaToInt(r, g, b, 1);  
+
+          //   if (cur > 255) {              
+          //     image.setPixelColour(cur, x, y);
+          //   }
+          // });
+
+          // image.composite(roll, 100, 0, {
+          //   mode: Jimp.BLEND_ADD,
+          //   opacitySource: 0.5,
+          //   opacityDest: 0.9
+          // });
           image.write(outPath + outName);
           return resolve(outName);
         })
@@ -122,41 +163,51 @@ class Convolute {
     });
   }
 
+  private randman(prim: number) {
+    return Math.random() > 0.1 ? prim / 2 : prim / 4
+  }
+
   private async plasmaSorter(image: Jimp) {
     let val = 1;
+    const raw = image.bitmap;
+    const width = raw.width;
+    const randy = Math.floor(Math.random() * Math.floor(width / 2));
     image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
-      let newColor = 0;
-      const raw = image.bitmap;
+      let newColor = 0x00000000;
       const a = raw.data[idx + 3];
+      // if ((y % randy) !== 0) {
+      if (x == image.bitmap.width - 1) {
+        val = 6;
+      }
       switch (val) {
         case 1:
-        case 4:
           val++;
           const g = raw.data[idx + 1];
-          const gCur = { r: 0, g, b: 0 };
+          const gCur = { r: this.randman(g), g, b: this.randman(g) };
           newColor = Jimp.rgbaToInt(gCur.r, gCur.g, gCur.b, a);
           break;
         case 2:
           val++;
-          const r = raw.data[idx + 0];
-          const rCur = { r, g: 0, b: 0 };
+          const r = raw.data[idx];
+          const rCur = { r, g: this.randman(r), b: this.randman(r) };
           newColor = Jimp.rgbaToInt(rCur.r, rCur.g, rCur.b, a);
           break;
         case 3:
-          val++;
-          const b = raw.data[idx + 2];
-          const bCur = { r: 0, g: 0, b };
-          newColor = Jimp.rgbaToInt(bCur.r, bCur.g, bCur.b, a);
-          break;
-        case 5:
           val = 1;
-          newColor = Jimp.rgbaToInt(0, 0, 0, 1);
+          const b = raw.data[idx + 2];
+          const bCur = { r: this.randman(b), g: this.randman(b), b };
+          newColor = Jimp.rgbaToInt(bCur.r, bCur.g, bCur.b, a);
           break;
         default:
           val = 1;
-          newColor = Jimp.rgbaToInt(0, 0, 0, 1);
+          // newColor =  0x88F2041;
+          // newColor = Jimp.rgbaToInt(0,0,0, a);
           break;
       }
+      // } else {
+      //   // newColor = 0x00000000;
+      //   newColor = Jimp.rgbaToInt(0, 0, 0, 0.1);
+      // }
 
       image.setPixelColor(newColor, x, y);
 
@@ -166,7 +217,6 @@ class Convolute {
     });
 
   }
-
 
   private async floydSteinberg(image: Jimp, factor: number) {
     image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
