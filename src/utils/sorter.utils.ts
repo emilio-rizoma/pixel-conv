@@ -89,9 +89,6 @@ class Convolute {
       ]
     }
   ];
-  // edge: IKernel = { name: KernelType.edge, kernel: [[0, 1, 0], [1, 4, 1], [0, 1, 0]] };
-  // focus: IKernel = { name: KernelType.focus, kernel: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] };
-  // gauss: IKernel = { name: KernelType.gauss, kernel: [[1, 2, 1], [2, 4, 2], [1, 2, 1]] };
 
   run(
     name = 'pixel-conv',
@@ -111,49 +108,16 @@ class Convolute {
       Jimp.read(path)
         .then((image) => {
 
-          // Will make a copy for later
-          // const roll = image.clone();
-          // roll.resize(Jimp.AUTO, 1440);
           image.resize(Jimp.AUTO, 1440);
-          image.color([
-            { apply: 'hue', params: [10] }
-          ]);
-          // this.floydSteinberg(roll,124);
 
-          // this.kernels.forEach(el => {
-          // roll.resize(Jimp.AUTO, 1440);
-          // image.convolution(this.kernels[0].kernel)
-          // });
-          // this.plasmaSorter(image);
-          // Need to focus?
           this.floydSteinberg(image, floyd);
           for (let index = 0; index < rounds; index++) {
             image.convolute(this.artik.filter(x => x.name == type).pop().kernel);
           }
-          
+
           this.plasmaSorter(image);
           
-          image.brightness(0.1);
-          // image.convolute(this.artik.filter(x => x.name == KernelType.gauss).pop().kernel);
-          // roll.scan(0, 0, roll.bitmap.width, roll.bitmap.height, (x, y, idx) => {
-          //   const raw = roll.bitmap;
-          //   const r = raw.data[idx + 0];
-          //   const g = raw.data[idx + 1];
-          //   const b = raw.data[idx + 2];
-          //   const a = raw.data[idx + 3];
-          //   const cur = Jimp.rgbaToInt(r, g, b, 1);  
-
-          //   if (cur > 255) {              
-          //     image.setPixelColour(cur, x, y);
-          //   }
-          // });
-
-          // image.composite(roll, 100, 0, {
-          //   mode: Jimp.BLEND_ADD,
-          //   opacitySource: 0.5,
-          //   opacityDest: 0.9
-          // });
-          image.write(outPath + outName);
+          image.write(outPath + new Date().getTime() + '_' + floyd + '_' + type + "_" + rounds + "_" + outName );
           return resolve(outName);
         })
         .catch((err) => {
@@ -175,45 +139,38 @@ class Convolute {
     image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
       let newColor = 0x00000000;
       const a = raw.data[idx + 3];
-      // if ((y % randy) !== 0) {
-      if (x == image.bitmap.width - 1) {
-        val = 6;
+      if (y % 3 != 0) {
+        if (x == image.bitmap.width - 1) {
+          val = 6;
+        }
+        const r = raw.data[idx];
+        const g = raw.data[idx + 1];
+        const b = raw.data[idx + 2];
+        switch (val) {
+          case 1:
+            val++;
+            const gCur = { r: this.randman(r), g, b: this.randman(b) };
+            newColor = Jimp.rgbaToInt(gCur.r, gCur.g, gCur.b, a);
+            break;
+          case 2:
+            val++;
+            const rCur = { r, g: this.randman(g), b: this.randman(b) };
+            newColor = Jimp.rgbaToInt(rCur.r, rCur.g, rCur.b, a);
+            break;
+          case 3:
+            val = 1;
+            const bCur = { r: this.randman(r), g: this.randman(g), b };
+            newColor = Jimp.rgbaToInt(bCur.r, bCur.g, bCur.b, a);
+            break;
+          default:
+            val = 1;
+            break;
+        }
+      } else {
+        newColor = Jimp.rgbaToInt(0, 0, 0, 100);
       }
-      switch (val) {
-        case 1:
-          val++;
-          const g = raw.data[idx + 1];
-          const gCur = { r: this.randman(g), g, b: this.randman(g) };
-          newColor = Jimp.rgbaToInt(gCur.r, gCur.g, gCur.b, a);
-          break;
-        case 2:
-          val++;
-          const r = raw.data[idx];
-          const rCur = { r, g: this.randman(r), b: this.randman(r) };
-          newColor = Jimp.rgbaToInt(rCur.r, rCur.g, rCur.b, a);
-          break;
-        case 3:
-          val = 1;
-          const b = raw.data[idx + 2];
-          const bCur = { r: this.randman(b), g: this.randman(b), b };
-          newColor = Jimp.rgbaToInt(bCur.r, bCur.g, bCur.b, a);
-          break;
-        default:
-          val = 1;
-          // newColor =  0x88F2041;
-          // newColor = Jimp.rgbaToInt(0,0,0, a);
-          break;
-      }
-      // } else {
-      //   // newColor = 0x00000000;
-      //   newColor = Jimp.rgbaToInt(0, 0, 0, 0.1);
-      // }
 
       image.setPixelColor(newColor, x, y);
-
-
-      // if (x == image.bitmap.width - 1 && y == image.bitmap.height - 1) {
-      // }
     });
 
   }
@@ -228,9 +185,6 @@ class Convolute {
       const newColor = this.quantizeColor(oldColor, factor);
       const quant = this.quantizeError(oldColor, newColor);
       image.setPixelColor(Jimp.rgbaToInt(quant.r, quant.g, quant.b, a), x, y);
-
-      // if (x == image.bitmap.width - 1 && y == image.bitmap.height - 1) {
-      // }
     });
 
   }
