@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { editFileName, imageFileFilter } from 'src/utils/file-uploading.utils';
-import { convolute } from 'src/utils/sorter.utils';
+import { editFileName, imageFileFilter } from 'src/services/file-uploading.service';
+import { convolute } from 'src/services/convolute.service';
 
-export interface RequestFile {
+export interface IRequestFile {
   /** Field name specified in the form */
   fieldname: string;
   /** Name of the file on the user's computer */
@@ -47,7 +47,7 @@ export class SortController {
     }),
   )
   async uploadedFile(@UploadedFile() file, @Req() req) {
-    const reqFile = file as RequestFile;
+    const reqFile = file as IRequestFile;
     const baseurl = req.headers.host;
     const response = {
       originalname: reqFile.originalname,
