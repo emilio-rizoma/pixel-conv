@@ -11,23 +11,23 @@ class FloydSteinberg {
         const width = image.bitmap.width;
         const height = image.bitmap.height;
         
-        console.log(width);
+        // console.log(width);
         image.scan(0, 0, width, height, (x, y, index) => {
             const quantError = this.quantError(image, index, factor);  
 
-            if (x + 1 < (width - 1)) {
+            if (x + 1 < width) {
                 this.setColor(image, x + 1, y, quantError, 7);
             }
 
-            if (x - 1 >= 0 && y + 1 < (height - 1)) {
+            if (x - 1 >= 0 && y + 1 < height) {
                 this.setColor(image, x - 1, y + 1, quantError, 3);
             }
 
-            if (y + 1 < (height - 1)) {
+            if (y + 1 < height) {
                 this.setColor(image, x, y + 1, quantError, 5);
             }
 
-            if ( x + 1 < (width - 1) && y + 1 < (height -1)) {
+            if ( x + 1 < width && y + 1 < height) {
                 this.setColor(image, x + 1, y + 1, quantError, 1);
             }
         });
@@ -36,8 +36,13 @@ class FloydSteinberg {
     }
 
     private setColor(image: Jimp, x: number, y: number, error: IQuantError, factor: number) {
-        const oldColor = image.getPixelColor(x, y);
-        const newColor = ((oldColor + error.hex) * factor) / 16;
+        const hex = image.getPixelColor(x, y);
+        const oldColor = Jimp.intToRGBA(hex);
+        const r = ((oldColor.r + error.quantError.r) * factor) / 16;
+        const g = ((oldColor.g + error.quantError.g) * factor) / 16;
+        const b = ((oldColor.b + error.quantError.b) * factor) / 16;
+        console.log(r + ", " + g + ", " + ", " + b);
+        const newColor = Jimp.rgbaToInt(r, g, b, oldColor.a);
         image.setPixelColor(newColor, x, y);
     }
 

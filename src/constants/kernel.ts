@@ -40,6 +40,14 @@ export const artik: IKernel[] = [
             [ 2, 4, 2 ],
             [ 1, 2, 1 ]
         ]
+    },
+    {
+        name: KernelType.plasma,
+        kernel: [
+            [ 0, 0, 0 ],
+            [ 1, 0, 1 ],
+            [ 0, 0, 0 ]
+        ]
     }
 ];
 
@@ -66,6 +74,14 @@ export const kernels: IKernel[] = [
             [ 1, 2, 1 ],
             [ 2, 4, 2 ],
             [ 1, 2, 1 ]
+        ]
+    },
+    {
+        name: KernelType.deform,
+        kernel: [
+            [ 0, -1, 0 ],
+            [ -1, 0, -1 ],
+            [ 0, 0, 1 ]
         ]
     }
 ];

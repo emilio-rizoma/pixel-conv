@@ -10,5 +10,7 @@ export enum KernelType {
     finger = 'finger',
     waves = 'waves',
     lines = 'lines',
-    gauss = 'gauss'
+    gauss = 'gauss',
+    plasma = 'plasma',
+    deform = 'deform'
 }
