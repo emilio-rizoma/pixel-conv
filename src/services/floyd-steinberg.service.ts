@@ -1,5 +1,5 @@
 import * as Jimp from 'jimp';
-import { IColor } from 'src/models/color.interface';
+import { IColor } from 'src/models/interfaces/color.interface';
 
 interface IQuantError {
     quantError: IColor;

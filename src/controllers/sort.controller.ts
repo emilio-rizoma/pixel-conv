@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -36,44 +37,36 @@ export interface IRequestFile {
 
 @Controller('sort')
 export class SortController {
-  @Post('upload')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './public/img',
-        filename: editFileName,
-      }),
-      fileFilter: imageFileFilter,
-    }),
-  )
-  async uploadedFile(@UploadedFile() file, @Req() req) {
-    const reqFile = file as IRequestFile;
-    const baseurl = req.headers.host;
-    const response = {
-      originalname: reqFile.originalname,
-      filename: reqFile.filename,
-      url: `${baseurl}/sort/process/${reqFile.filename}`,
-    };
-    return response;
-  }
-
-  @Get('process/:imgpath')
-  async processFile(@Param('imgpath') image, @Req() req) {
+  @Post('process')
+  async processFile(@Req() req) {
     const { kernel, rounds, floyd } = req.query;
-    const name = image.replace('.jpeg', '');
-    const path = `./public/img/${image}`;
-    const conf = await convolute.run(name, path, kernel, rounds, floyd);
-    const baseurl = req.headers.host;
-    const response = {
-      originalfile: image,
-      manipulatedfile: conf,
-      url: `http://${baseurl}/sort/download/${conf}`,
-    };
-    return response;
+    // const name = image.replace('.jpeg', '');
+    // const path = `./public/img/${image}`;
+    const { data } = req; 
+    console.log(data);
+
+    // const conf = await convolute("some name", path, kernel, rounds, floyd);
+    // const baseurl = req.headers.host;
+    // const response = {
+    //   originalfile: image,
+    //   manipulatedfile: conf,
+    //   url: `http://${baseurl}/sort/download/${conf}`,
+    // };
+    return { success: true };
   }
 
-  @Get('download/:imgpath')
-  seeUploadedFile(@Param('imgpath') image, @Res() res) {
-    return res.sendFile(image, { root: './public/output' });
-  }
+  // @Get('process/:imgpath')
+  // async processFile(@Param('imgpath') image, @Req() req) {
+  //   const { kernel, rounds, floyd } = req.query;
+  //   const name = image.replace('.jpeg', '');
+  //   const path = `./public/img/${image}`;
+  //   const conf = await convolute(name, path, kernel, rounds, floyd);
+  //   const baseurl = req.headers.host;
+  //   const response = {
+  //     originalfile: image,
+  //     manipulatedfile: conf,
+  //     url: `http://${baseurl}/sort/download/${conf}`,
+  //   };
+  //   return response;
+  // }
 }
